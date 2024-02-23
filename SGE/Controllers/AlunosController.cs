@@ -383,6 +383,10 @@ namespace SGE.Controllers
                 .FirstOrDefault().TipoUsuarioId; //Busca o id do tipo de usuario
             ViewData["TipoUsuarioId"] = idTipo; //Exibe o id do tipo de usuario na view
             return View("Edit", aluno);//Retorna a view de edição (Edit.cshtml) do aluno
+
+
+
         }
     }
 }
+
