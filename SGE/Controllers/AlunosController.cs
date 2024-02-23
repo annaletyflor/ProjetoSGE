@@ -15,6 +15,7 @@ namespace SGE.Controllers
     public class AlunosController : Controller
     {
         private readonly SGEContext _context;
+        private Stream fileStream;
 
         public AlunosController(SGEContext context)
         {
@@ -351,6 +352,37 @@ namespace SGE.Controllers
         private bool AlunoExists(Guid id)
         {
             return _context.Alunos.Any(e => e.AlunoId == id);
+        }
+        public async Task<IActionResult> AlterarFoto(Guid id, IFormFile novaFoto)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+            Aluno aluno = await _context.Alunos.FindAsync(id);
+            if (novaFoto != null && novaFoto.Length > 0)
+            {
+                var fileName = aluno.AlunoId.ToString(); // Gera um novo nome para a imagem
+                var fileExtension = Path.GetExtension(novaFoto.FileName); // Pega a extensão do arquivo
+                var newFileName = fileName + fileExtension; // Novo nome do arquivo
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "Data\\Content\\Photo", newFileName); // Caminho do arquivo
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await novaFoto.CopyToAsync(fileStream); //Sa,va a imagem no caminho especifico
+                }
+                aluno.UrlFoto = newFileName; // Atualiza o campo UrlFoto com o novo nome do arquivo
+                _context.Alunos.Update(aluno);
+                await _context.SaveChangesAsync();
+
+                var imageBytes = await System.IO.File.ReadAllBytesAsync(filePath);//Carrega a imagem
+                var imageBase64 = Convert.ToBase64String(imageBytes);//Converte a imagem para base64
+                ViewData["Imagem"] = imageBase64; // Exibe a imagem na view
+            }
+            Guid idTipo = _context.TiposUsuario.Where(a => a.Tipo == "Aluno")
+                .FirstOrDefault().TipoUsuarioId; //Busca o id do tipo de usuario
+            ViewData["TipoUsuarioId"] = idTipo; //Exibe o id do tipo de usuario na view
+            return View("Edit", aluno);//Retorna a view de edição (Edit.cshtml) do aluno
         }
     }
 }
